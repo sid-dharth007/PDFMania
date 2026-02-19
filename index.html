@@ -197,10 +197,33 @@ download(await pdf.save({useObjectStreams:true}),"compressed.pdf");
 
 // Lock
 async function lock(){
-const pass=document.getElementById("passInput").value;
-const pdf=await PDFDocument.load(await files[0].arrayBuffer());
-download(await pdf.save({userPassword:pass,ownerPassword:pass}),"locked.pdf");
+const password = document.getElementById("passInput").value;
+if(!password){
+    alert("Enter password");
+    return;
 }
+
+const existingPdfBytes = await files[0].arrayBuffer();
+const existingPdf = await PDFDocument.load(existingPdfBytes);
+
+const newPdf = await PDFDocument.create();
+const pages = await newPdf.copyPages(existingPdf, existingPdf.getPageIndices());
+pages.forEach(p => newPdf.addPage(p));
+
+const encryptedBytes = await newPdf.save({
+    userPassword: password,
+    ownerPassword: password,
+    permissions: {
+        printing: "highResolution",
+        modifying: false,
+        copying: false,
+        annotating: false
+    }
+});
+
+download(encryptedBytes, "locked.pdf");
+}
+
 
 // Unlock
 async function unlock(){
@@ -234,4 +257,5 @@ document.getElementById("result").style.display="block";
 </footer>
 </body>
 </html>
+
 
